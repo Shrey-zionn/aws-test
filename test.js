@@ -1,15 +1,78 @@
 const {
     default: axios
 } = require('axios');
+const multer = require('multer')
 const express = require('express');
 require('dotenv/config');
+const uuid = require("uuid").v4
 const app = express();
+const fs = require('fs');
+const {
+    s3Uploadv2
+} = require('./config/s3service');
+
 app.use(express.json());
 
-const fs = require('fs')
-const PDFDocument = require('pdfkit');
-const base64 = require('base64topdf')
 
+
+/*******************MULTER CONFIG********************/
+
+
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, "uploads")
+//     },
+//     filename: (req, file, cb) => {
+//         const {
+//             originalname
+//         } = file;
+//         cb(null, `${uuid()}-${originalname}`)
+//     }
+
+// })
+
+
+const storage = multer.memoryStorage()
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype.split("/")[1] === "pdf") {
+        cb(null, true)
+    } else {
+        cb(new Error("File type not supported"), false)
+    }
+}
+
+const upload = multer({
+    storage,
+    fileFilter
+
+})
+
+app.post("/upload", upload.single("file"), async (req, res) => {
+    console.log(req.file);
+    const data = await s3Uploadv2(req.file)
+    
+    res.json({
+        status: "success",
+        data
+    })
+})
+
+
+/*************************************************/
+
+app.use((error, req, res, next) => {
+
+    if (error) {
+
+        return res.json({
+            message: error.message
+        })
+
+    }
+
+    next()
+})
 
 
 app.get("/", async (req, res) => {
@@ -29,14 +92,10 @@ app.get("/", async (req, res) => {
         })
 
         let bdata = Buffer.from(pdf).toString("base64");
-        let buff = new Buffer(bdata,'base64')
-        fs.writeFileSync('some.pdf',buff)
-
-        // how to save in db
-
-
+        let buff = new Buffer(bdata, 'base64')
+        fs.writeFileSync('some.pdf', buff)
         res.send({
-            message:'done!!!'
+            message: 'done!!!'
         })
 
     } catch (error) {
@@ -45,6 +104,8 @@ app.get("/", async (req, res) => {
         })
     }
 })
+
+
 
 app.listen(process.env.PORT || 8000, () => {
     console.log(`Server running`)
