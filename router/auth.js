@@ -185,6 +185,4 @@ async function otpVerify(req, res) {
     }
 }
 
-
-
 module.exports = authRouter;

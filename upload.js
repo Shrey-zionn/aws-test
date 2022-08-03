@@ -4,6 +4,7 @@ const {
 const multer = require('multer')
 const express = require('express');
 require('dotenv/config');
+const db = require('./config/db')
 const uuid = require("uuid").v4
 const app = express();
 const fs = require('fs');
@@ -14,24 +15,7 @@ const {
 app.use(express.json());
 
 
-
-/*******************MULTER CONFIG********************/
-
-
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, "uploads")
-//     },
-//     filename: (req, file, cb) => {
-//         const {
-//             originalname
-//         } = file;
-//         cb(null, `${uuid()}-${originalname}`)
-//     }
-
-// })
-
-
+/************************MULTER CONFIG*************************8*/
 const storage = multer.memoryStorage()
 
 const fileFilter = (req, file, cb) => {
@@ -48,19 +32,68 @@ const upload = multer({
 
 })
 
-app.post("/upload", upload.single("file"), async (req, res) => {
-    console.log(req.file);
+/*********************************************************/
+
+const uploadRouter = express.Router()
+uploadRouter.route("/getpdf").get(getPdf)
+uploadRouter.route("/upload").post( upload.single("file"),uploadReport)
+
+
+async function uploadReport(req, res)  {
     const data = await s3Uploadv2(req.file)
     
-    res.json({
-        status: "success",
-        data
+    let sql = `UPDATE company_details SET report_url = '${data.Location}' WHERE c_name = "Tata Motors"`
+
+    db.query(sql,(err,result)=>{
+        if(err){
+            res.json({
+                message : err.message
+            })
+        }else{
+            res.json({
+                status: "success",
+                data
+            })
+        }
     })
-})
+
+    
+}
+
+async function getPdf(req, res){
+    try {
+
+        let cin = "L28920MH1945PLC004520"
+        let {
+            data: pdf
+        } = await axios.get(`https://api.probe42.in/probe_reports_sandbox/companies/${cin}/reports?type=pdf&client_name=probe`, {
+            headers: {
+                'x-api-key': "4PhvHuezjbttMU469pgl9iuNQIZ6Ntd7a3hWtFs4",
+                'x-api-version': '1.3',
+                'Accept': 'application/octet-stream',
+                'Content-Type': 'application/pdf',
+            },
+            responseType: 'arraybuffer',
+            responseEncoding: 'binary'
+        })
+
+        let bdata = Buffer.from(pdf).toString("base64");
+        let buff = new Buffer(bdata, 'base64')
+        fs.writeFileSync(`uploads/${cin}.pdf`, buff)
+        res.send({
+            message: 'done!!!'
+        })
+
+    } catch (error) {
+        res.json({
+            message: error.message
+        })
+    }
+}
 
 
-/*************************************************/
 
+// Multer error handling
 app.use((error, req, res, next) => {
 
     if (error) {
@@ -75,38 +108,4 @@ app.use((error, req, res, next) => {
 })
 
 
-app.get("/", async (req, res) => {
-    try {
-
-        let {
-            data: pdf
-        } = await axios.get("https://api.probe42.in/probe_reports_sandbox/companies/L28920MH1945PLC004520/reports?type=pdf&client_name=probe", {
-            headers: {
-                'x-api-key': "4PhvHuezjbttMU469pgl9iuNQIZ6Ntd7a3hWtFs4",
-                'x-api-version': '1.3',
-                'Accept': 'application/octet-stream',
-                'Content-Type': 'application/pdf',
-            },
-            responseType: 'arraybuffer',
-            responseEncoding: 'binary'
-        })
-
-        let bdata = Buffer.from(pdf).toString("base64");
-        let buff = new Buffer(bdata, 'base64')
-        fs.writeFileSync('some.pdf', buff)
-        res.send({
-            message: 'done!!!'
-        })
-
-    } catch (error) {
-        res.json({
-            message: error.message
-        })
-    }
-})
-
-
-
-app.listen(process.env.PORT || 8000, () => {
-    console.log(`Server running`)
-})
+module.exports = uploadRouter

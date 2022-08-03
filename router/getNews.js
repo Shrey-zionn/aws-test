@@ -13,6 +13,7 @@ newsRouter.route("/add").get(addNews)
 newsRouter.route("/get").get(getNews)
 
 
+
 // allowed news reports
 const whilelist = new Set();
 
@@ -47,15 +48,11 @@ async function addNews(req, res) {
             }
         })
 
-        console.log(news.data);
-
         // ADDING NEW NEWS LETTER
         news.data.articles.forEach(news => {
-
-
             if (whilelist.has(news.source.name)) {
                 let c_id = ccid;
-                
+
                 let news_title = news.title.replace("'", "\\")
                 let news_url = news.url.replace("'", "\\")
                 let publishedAt = news.publishedAt
@@ -72,9 +69,6 @@ async function addNews(req, res) {
                     }
                 })
             }
-
-
-
         });
 
         res.json({
@@ -97,7 +91,7 @@ async function getNews(req, res) {
         // let sql = `SELECT * FROM news_details LEFT JOIN company_details ON news_details.c_id = company_details.c_id WHERE c_name='${company}' `
         let sql = `SELECT * FROM news_updates LEFT JOIN company_details ON news_updates.c_id = company_details.c_id WHERE c_name='${company}' `
 
-        
+
 
         db.query(sql, (err, result) => {
             if (err) {
@@ -111,13 +105,13 @@ async function getNews(req, res) {
         })
 
 
-
     } catch (error) {
         res.json({
             message: error.message
         })
     }
 }
+
 
 
 module.exports = newsRouter;

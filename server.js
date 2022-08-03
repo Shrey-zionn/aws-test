@@ -4,6 +4,8 @@ const cors = require('cors');
 const newsRouter = require('./router/getNews');
 const db = require('./config/db')
 const authRouter = require('./router/auth');
+const uploadRouter = require('./upload');
+const reportRouter = require('./router/reports');
 
 
 const app = express();
@@ -13,6 +15,8 @@ app.use(cors())
 
 app.use("/auth", authRouter)
 app.use("/getnews", newsRouter)
+app.use("/reports",uploadRouter)
+app.use("/company",reportRouter)
 app.use((req,res)=>{
     res.json({
         message : "Page not found"
