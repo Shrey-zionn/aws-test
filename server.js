@@ -23,6 +23,8 @@ app.use((req,res)=>{
     })
 })
 
+
+// console.log(Date.now());
 app.listen(process.env.PORT || 8080, () => {
     console.log(`Server running`)
 })

@@ -42,7 +42,7 @@ uploadRouter.route("/upload").post( upload.single("file"),uploadReport)
 async function uploadReport(req, res)  {
     const data = await s3Uploadv2(req.file)
     
-    let sql = `UPDATE company_details SET report_url = '${data.Location}' WHERE c_name = "Tata Motors"`
+    let sql = `UPDATE company_details SET report_url = '${data.Location}' WHERE c_name = "Godrej"`
 
     db.query(sql,(err,result)=>{
         if(err){
@@ -63,7 +63,7 @@ async function uploadReport(req, res)  {
 async function getPdf(req, res){
     try {
 
-        let cin = "L28920MH1945PLC004520"
+        let cin = "L74120MH1985PLC035308"
         let {
             data: pdf
         } = await axios.get(`https://api.probe42.in/probe_reports_sandbox/companies/${cin}/reports?type=pdf&client_name=probe`, {

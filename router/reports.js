@@ -11,18 +11,15 @@ const reportRouter = express.Router()
 
 reportRouter.route("/addreport").post(addCompanyReport)
 reportRouter.route("/getreport").get(getCompanyReport)
+reportRouter.route("/getUpdate").get(updateReport)
 
 async function addCompanyReport(req, res) {
     try {
 
-        // company name will come
-        // from somewhere i will get the company cin
-        // from cin will make a call on api
-        // and get the required details
+        let company = 'VISMAYAS'
+        let cin = 'U92140KL2015PTC038339'
 
-        // let company  = req.body;
-
-        let sql = `SELECT * from company_details WHERE c_name = 'Tata Motors'`
+        let sql = `SELECT * from company_details WHERE c_name = '${company}'`
 
         db.query(sql, async (err, result) => {
 
@@ -37,8 +34,9 @@ async function addCompanyReport(req, res) {
                 if (result.length == 0) {
 
                     let c_id = uuidv4();
-
-                    let iql = `INSERT INTO company_details (c_id , c_name) VALUES ('${c_id}' , 'Tata Motors')`
+                    let date = Date.now()
+                    
+                    let iql = `INSERT INTO company_details (c_id , c_name,date,cin) VALUES ('${c_id}' , '${company}','${date}','${cin}')`
 
                     db.query(iql,(err,result)=>{
                         if(err){
@@ -48,7 +46,7 @@ async function addCompanyReport(req, res) {
                         }
                     })
 
-                    let doc = await axios('https://api.probe42.in/probe_pro_sandbox/companies/L28920MH1945PLC004520/comprehensive-details' ,{
+                    let doc = await axios(`https://api.probe42.in/probe_pro_sandbox/companies/${cin}/comprehensive-details` ,{
                         headers: {
                             'x-api-key': "4PhvHuezjbttMU469pgl9iuNQIZ6Ntd7a3hWtFs4",
                             'x-api-version': '1.3',
@@ -79,6 +77,12 @@ async function addCompanyReport(req, res) {
                             })
                         }
                     }
+
+                    res.json({
+                        message : "reports have been added"
+                    })
+  
+
                 }else{
                     res.json({
                         message : "reports have already been added"
@@ -101,7 +105,7 @@ async function getCompanyReport(req,res){
 
         // let company = req.body
 
-        let sql = `SELECT * FROM company_reports LEFT JOIN company_details ON company_reports.c_id = company_details.c_id WHERE c_name="Tata Motors"`
+        let sql = `SELECT * FROM company_reports LEFT JOIN company_details ON company_reports.c_id = company_details.c_id WHERE c_name="Godrej"`
 
         db.query(sql,(err,result)=>{
             if(err){
@@ -118,6 +122,61 @@ async function getCompanyReport(req,res){
     } catch (error) {
         res.json({
             message: error.message
+        })
+    }
+}
+
+async function updateReport(req,res){
+    try {
+
+         let cin= req.query.q;
+
+         let doc = await axios.get(`https://api.probe42.in/probe_pro_sandbox/companies/${cin}/datastatus`,{
+            headers: {
+                'x-api-key': "4PhvHuezjbttMU469pgl9iuNQIZ6Ntd7a3hWtFs4",
+                'x-api-version': '1.3',
+            }
+         })
+
+        let update_date = doc.data.data.data_status.last_details_updated
+
+        let date = new Date(update_date);
+
+        let curr_time = date.getTime()
+        let sql = `SELECT date FROM company_details WHERE cin='${cin}'`
+
+        db.query(sql,(err,result)=>{
+            if(err){
+                res.json({
+                   message: err.message
+                })
+            }else{
+                let last_update = result[0].date
+                
+                let days_since_last_update = Math.ceil((last_update - curr_time)/(1000 * 3600 * 24))
+                
+                if(days_since_last_update>=120){
+                    res.json({
+                        message : "Data is outdated"
+                    })
+                }else{
+                    res.json({
+                        message : `Reports were last updated ${days_since_last_update}`
+                    })
+                }
+
+                res.json({
+                    message:"done"
+                 })
+            }
+        })
+
+         
+
+        
+    } catch (error) {
+        res.json({
+            message : error.message
         })
     }
 }
