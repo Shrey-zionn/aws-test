@@ -35,7 +35,7 @@ const upload = multer({
 /*********************************************************/
 
 const uploadRouter = express.Router()
-uploadRouter.route("/getpdf").get(getPdf)
+uploadRouter.route("/getpdf").get(storePdf)
 uploadRouter.route("/upload").post( upload.single("file"),uploadReport)
 
 
@@ -60,7 +60,7 @@ async function uploadReport(req, res)  {
     
 }
 
-async function getPdf(req, res){
+async function storePdf(req, res){
     try {
 
         let cin = "L74120MH1985PLC035308"

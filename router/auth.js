@@ -17,6 +17,7 @@ const authRouter = express.Router()
 authRouter.route("/login").post(loginUser)
 authRouter.route("/signup").post(signUpUser)
 authRouter.route("/otpverify").post(otpVerify)
+authRouter.route("/onboarding").post(onBoarding)
 
 
 
@@ -182,6 +183,36 @@ async function otpVerify(req, res) {
 
     } catch (error) {
 
+    }
+}
+
+async function onBoarding(req,res){
+    try {
+        
+        
+        let {email , curr_employer , designation , tenure} = req.body;
+
+        let uql = `UPDATE user_details SET curr_employer = '${curr_employer}' , designation = '${designation}' , tenure = '${tenure}' WHERE email = '${email}'`
+
+        db.query(uql,(err,result)=>{
+            if(err){
+                res.json({
+                    message : err.message
+                })
+            }else{
+                console.log(result);
+                res.json({
+                    message : "Details saved"
+                })
+            }
+        })
+
+
+    } catch (error) {
+        res.json({
+            error : error.message
+        })
+        
     }
 }
 
