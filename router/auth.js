@@ -25,23 +25,23 @@ authRouter.route("/onboarding").post(onBoarding)
 async function loginUser(req, res) {
     try {
 
+        // console.log(req.body);
         let userObj = req.body;
         let user_email = userObj.email
         let password = userObj.password
 
         let sql = `SELECT * FROM user_details WHERE email='${user_email}'`
 
-        if (password === null) {
-            console.log("You are already logged in through some socials");
-        }
 
         db.query(sql, (err, result) => {
             if (err) {
                 throw err
             } else {
-
-                if (result[0].password === null) {
-                    console.log("You are already logged in through some other socials");
+                
+                if (result[0].password == 'undefined') {
+                    res.json({
+                        message :"user logged in"
+                    })
                 } else {
 
                     if (password !== result[0].password) {
@@ -54,10 +54,10 @@ async function loginUser(req, res) {
                         res.json({
                             message: "Account not verified",
                         })
-                    } else {
+                    } else if(password === result[0].password) {
 
                         // login the user
-
+                        
                         let payload = user_email;
                         const token = jwt.sign({
                             id: payload
@@ -68,6 +68,10 @@ async function loginUser(req, res) {
                             token: token
                         })
 
+                    }else{
+                        res.json({
+                            message :"something went wrong"
+                        })
                     }
 
                 }
